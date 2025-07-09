@@ -1,8 +1,3 @@
-Here's an **enhanced and attractive** version of your `README.md`, using better markdown structure, emojis, and formatting to make it look professional and clean:
-
----
-
-```markdown
 # 📝 Product Review Sentiment Analysis
 
 A machine learning project that classifies product review sentiments into **Positive**, **Negative**, or **Neutral** using natural language processing and supervised learning. It includes a fully functional **Streamlit web app** for real-time predictions.
