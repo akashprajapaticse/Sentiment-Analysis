@@ -1,28 +1,27 @@
 # 📝 Product Review Sentiment Analysis
 
-A machine learning project that classifies product review sentiments into **Positive**, **Negative**, or **Neutral** using natural language processing and supervised learning. It includes a fully functional **Streamlit web app** for real-time predictions.
+This project uses **machine learning** and **NLP techniques** to classify product reviews into three sentiment classes: **Positive**, **Negative**, and **Neutral**. It includes a well-structured Python backend and an interactive frontend built with **Streamlit**.
 
 ---
 
 ## 🔍 Overview
 
-This project builds a sentiment analysis pipeline with:
-
-- **TF-IDF** vectorization
-- **SMOTE** to address class imbalance
-- **Multinomial Naive Bayes** classifier
-- **GridSearchCV** for hyperparameter tuning
-- **Streamlit** web app for interactive sentiment predictions
+- **Text Preprocessing**: Lowercasing, punctuation removal, stopword removal, lemmatization
+- **Feature Extraction**: TF-IDF Vectorization
+- **Class Imbalance Handling**: SMOTE
+- **Model**: Multinomial Naive Bayes
+- **Optimization**: GridSearchCV
+- **Deployment**: Streamlit-based frontend for real-time prediction
 
 ---
 
 ## ✨ Features
 
-✅ **Accurate Sentiment Classification**  
-✅ **Advanced Text Preprocessing** (lowercasing, lemmatization, stopwords removal)  
-✅ **Handles Class Imbalance** with SMOTE  
-✅ **Hyperparameter Optimization** using GridSearchCV  
-✅ **User-Friendly Streamlit Web App**
+✅ Sentiment Prediction (`Positive`, `Negative`, `Neutral`)  
+✅ Balanced training using SMOTE  
+✅ Optimized hyperparameters  
+✅ End-to-end pipeline  
+✅ User-friendly web interface
 
 ---
 
@@ -31,31 +30,34 @@ This project builds a sentiment analysis pipeline with:
 ```
 
 Sentiment-Analysis/
-├── app.py                     # Streamlit application
-├── models/
-│   └── sentiment\_pipeline.pkl # Trained model pipeline
 ├── data/
-│   ├── sentiment.csv          # Primary dataset
-│   ├── Equal.csv              # Additional dataset
-│   └── RATIO.csv              # Additional dataset
+│   ├── Equal.csv
+│   ├── RATIO.csv
+│   └── sentiment.csv
+├── frontend/
+│   └── streamlit\_app.py        # Streamlit web app
+├── models/
+│   └── sentiment\_pipeline.pkl  # Trained ML model
 ├── scripts/
-│   └── train\_model.py         # Model training and evaluation script
-├── .gitignore
-└── README.md
+│   └── train\_model.py          # Model training script
+├── app.py                      # Main entry (optional)
+├── requirements.txt            # Required Python packages
+└── README.md                   # Project documentation
 
 ````
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Setup Instructions
 
-### 1. Clone the repository
+### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/akashprajapaticse/Sentiment-Analysis.git
 cd Sentiment-Analysis
 ````
 
-### 2. Create and activate virtual environment
+### 2. Create & Activate Virtual Environment
 
 ```bash
 python -m venv .venv
@@ -65,80 +67,69 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. (Optional) Download NLTK resources
-
-The scripts will automatically download NLTK data (stopwords, punkt, wordnet) if not available.
+> ⚠️ The first run will download necessary NLTK resources like stopwords and punkt automatically.
 
 ---
 
-## 🚀 Usage
+## 🏃 How to Use
 
 ### 🔧 Train the Model
+
+Run the model training script:
 
 ```bash
 python scripts/train_model.py
 ```
 
-> This will preprocess data, tune hyperparameters, and save the trained pipeline to `models/sentiment_pipeline.pkl`.
+> This saves the trained pipeline as `models/sentiment_pipeline.pkl`.
 
-### 🌐 Run the Streamlit Web App
+### 🌐 Run the Streamlit App
 
 ```bash
-streamlit run app.py
+streamlit run frontend/streamlit_app.py
 ```
 
-> Your browser will open the app at `http://localhost:8501`
+Visit [http://localhost:8501](http://localhost:8501) to interact with the app.
 
 ---
 
 ## 📊 Model Performance
 
-* **Accuracy:** \~63%
-* **Challenges:** Neutral sentiment is harder to classify due to semantic ambiguity.
-* **Strengths:** Performs well for strongly positive or negative reviews.
+* **Accuracy**: \~63%
+* Performs well for positive/negative, with room to improve "Neutral" prediction
 
 ---
 
-## 🌱 Future Enhancements
+## 🌱 Future Improvements
 
-* 🔍 **Better Neutral Classification**
-* 🧠 **Use of Embeddings**: Word2Vec, GloVe, BERT, RoBERTa
-* 📈 **Deep Learning Models**: CNNs, RNNs, LSTMs
-* 🧪 **Larger and Diverse Datasets**
+* 💡 Use Word2Vec, GloVe, or BERT embeddings
+* 🧠 Integrate RNN/LSTM for deeper semantic understanding
+* 🗂️ Add more diverse training data
+* 🎯 Enhance precision for neutral class
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License**.
-Feel free to use, modify, and share it!
+MIT License
 
 ---
 
-## 🙌 Contributions
+## 🙌 Contributing
 
-Pull requests, bug fixes, and suggestions are welcome!
-Let’s improve sentiment classification together 💬
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ---
 
-## 📬 Contact
+## 👤 Author
 
 **Akash Prajapati**
 🔗 [GitHub](https://github.com/akashprajapaticse)
 
-```
-
-Let me know if you'd like this README to include:
-- Example predictions (screenshots or terminal output)
-- A logo/banner for the project
-- Deployment instructions (e.g. Heroku, HuggingFace Spaces, etc.)
-
-I can also generate a `README.md` file for you to copy directly.
 ```
