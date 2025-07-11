@@ -35,12 +35,11 @@ Sentiment-Analysis/
 │   ├── RATIO.csv
 │   └── sentiment.csv
 ├── frontend/
-│   └── streamlit\_app.py        # Streamlit web app
+│   └── streamlit_app.py        # Streamlit web app
 ├── models/
 │   └── sentiment\_pipeline.pkl  # Trained ML model
 ├── scripts/
 │   └── train\_model.py          # Model training script
-├── app.py                      # Main entry (optional)
 ├── requirements.txt            # Required Python packages
 └── README.md                   # Project documentation
 

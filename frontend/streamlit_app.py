@@ -1,107 +1,140 @@
-# sentiment_project/frontend/streamlit_app.py
+# sentiment_project/app.py
 
 import streamlit as st
-import requests
-import json
+import pickle
+import re
+import nltk
 import os
-import sys
+import pandas as pd # Used for pd.isna check in preprocess_text
 
-# Add the project root to the sys path to enable importing from scripts/
-# This is crucial for the Streamlit app to find the preprocessor, if needed for local prediction
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, project_root)
+# --- NLTK Downloads (Streamlit friendly) ---
+# These are placed here so Streamlit can ensure the data is present when the app runs.
+# In a production environment, you might handle these downloads during deployment setup.
+@st.cache_resource # Cache the NLTK downloads to run only once
+def download_nltk_data():
+    try:
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('stopwords')
+    try:
+        nltk.data.find('corpora/wordnet')
+    except LookupError:
+        nltk.download('wordnet')
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt')
+    try:
+        nltk.data.find('corpora/omw-1.4')
+    except LookupError:
+        nltk.download('omw-1.4')
+    st.sidebar.success("NLTK data loaded.")
 
-# Option 1: Direct model loading (if you want Streamlit to run model locally)
-# import pickle
-# from scripts.train_model import preprocess_text
-# try:
-#     MODEL_DIR = os.path.join(project_root, 'models')
-#     MODEL_PATH = os.path.join(MODEL_DIR, 'sentiment_model.pkl')
-#     VECTORIZER_PATH = os.path.join(MODEL_DIR, 'tfidf_vectorizer.pkl')
-#
-#     with open(MODEL_PATH, 'rb') as model_file:
-#         local_model = pickle.load(model_file)
-#     with open(VECTORIZER_PATH, 'rb') as vectorizer_file:
-#         local_vectorizer = pickle.load(vectorizer_file)
-#     st.success("Local model loaded successfully!")
-#     LOCAL_MODEL_LOADED = True
-# except Exception as e:
-#     st.warning(f"Could not load local model (running via API instead): {e}")
-#     LOCAL_MODEL_LOADED = False
+download_nltk_data()
 
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 
-# Option 2: Use the FastAPI backend (Recommended for separation of concerns)
-# You need to run the FastAPI app separately (e.g., uvicorn app.api:app --reload)
-FASTAPI_URL = "http://127.0.0.1:8000/predict" # Adjust if your FastAPI runs on a different port or host
+# --- Preprocessing Function (MUST be identical to the one used during training) ---
+def preprocess_text(text):
+    if pd.isna(text) or not isinstance(text, str):
+        return ""
+    try:
+        text = str(text).lower()
+        # Remove URLs
+        text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
+        # Remove HTML tags
+        text = re.sub(r'<.*?>', '', text)
+        # Remove special characters and punctuation (keep alphanumeric and spaces)
+        text = re.sub(r'[^\w\s]', '', text)
+        # Remove numbers
+        text = re.sub(r'\d+', '', text)
+        # Remove extra whitespaces
+        text = re.sub(r'\s+', ' ', text).strip()
 
-st.set_page_config(page_title="Sentiment Analysis App", layout="centered")
+        tokens = nltk.word_tokenize(text)
+        stopwords_set = set(stopwords.words('english'))
+        tokens = [word for word in tokens if word not in stopwords_set]
 
-st.title("Product Review Sentiment Analyzer")
-st.markdown("Enter a product review below to get its sentiment prediction (Positive, Negative, or Neutral).")
+        lemmatizer = WordNetLemmatizer()
+        tokens = [lemmatizer.lemmatize(word) for word in tokens]
 
-user_input = st.text_area("Enter your review here:", height=150, placeholder="e.g., This product is amazing, I love it!")
+        return " ".join(tokens)
+    except Exception as e:
+        st.error(f"Error during preprocessing: {e}") # Display error in Streamlit
+        return ""
 
-if st.button("Analyze Sentiment"):
-    if not user_input.strip():
-        st.error("Please enter some text to analyze.")
-    else:
-        with st.spinner("Analyzing sentiment..."):
-            try:
-                # --- Using FastAPI Backend ---
-                headers = {'Content-Type': 'application/json'}
-                data = json.dumps({"text": user_input})
-                response = requests.post(FASTAPI_URL, headers=headers, data=data)
+# --- Load the Trained Model ---
+# Use st.cache_resource to load the model only once when the app starts
+@st.cache_resource
+def load_model():
+    MODEL_DIR = os.path.join(os.path.dirname(__file__),'..', 'models') # Correct path for relative access
+    MODEL_PIPELINE_PATH = os.path.join(MODEL_DIR, 'sentiment_pipeline.pkl')
+    
+    try:
+        with open(MODEL_PIPELINE_PATH, 'rb') as model_file:
+            model = pickle.load(model_file)
+        return model
+    except FileNotFoundError:
+        st.error(f"Error: Model file not found at {MODEL_PIPELINE_PATH}. Please ensure you have run train_model.py first.")
+        return None
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None
 
-                if response.status_code == 200:
-                    result = response.json()
-                    sentiment = result.get("sentiment")
-                    st.write("---")
-                    st.subheader("Predicted Sentiment:")
-                    if sentiment.lower() == "positive":
-                        st.success(f"**Positive!** 🎉")
-                    elif sentiment.lower() == "negative":
-                        st.error(f"**Negative!** 😠")
-                    elif sentiment.lower() == "neutral":
-                        st.info(f"**Neutral.** 😐")
-                    else:
-                        st.warning(f"**Sentiment: {sentiment.capitalize()}** (Unknown category)")
-                else:
-                    st.error(f"Error from API: {response.status_code} - {response.json().get('detail', 'Unknown error')}")
-                    st.info("Please ensure the FastAPI backend is running.")
+model = load_model()
 
-                # --- Alternative: Local Model Prediction (if you enabled Option 1 above) ---
-                # if LOCAL_MODEL_LOADED:
-                #     processed_text = preprocess_text(user_input)
-                #     if not processed_text.strip():
-                #         st.warning("Cannot analyze sentiment for empty or highly preprocessed text.")
-                #     else:
-                #         text_vectorized = local_vectorizer.transform([processed_text])
-                #         prediction = local_model.predict(text_vectorized)[0]
-                #         st.write("---")
-                #         st.subheader("Predicted Sentiment (Local Model):")
-                #         if prediction.lower() == "positive":
-                #             st.success(f"**Positive!** 🎉")
-                #         elif prediction.lower() == "negative":
-                #             st.error(f"**Negative!** 😠")
-                #         elif prediction.lower() == "neutral":
-                #             st.info(f"**Neutral.** 😐")
-                #         else:
-                #             st.warning(f"**Sentiment: {prediction.capitalize()}** (Unknown category)")
-                # else:
-                #     st.warning("Local model not loaded. Please ensure the model training script has run successfully.")
+# --- Streamlit UI ---
+st.set_page_config(page_title="Product Review Sentiment Analysis", page_icon="💬", layout="centered")
 
-            except requests.exceptions.ConnectionError:
-                st.error("Could not connect to the FastAPI backend. Please ensure it is running (e.g., `uvicorn app.api:app --reload` from the project root).")
-            except Exception as e:
-                st.error(f"An unexpected error occurred: {e}")
-
+st.title("💬 Product Review Sentiment Analysis")
+st.write("---")
 st.markdown("""
-<style>
-.stTextArea [data-baseweb="textarea"] {
-    min-height: 150px;
-}
-</style>
-""", unsafe_allow_html=True)
+    This application predicts the sentiment of a product review (Positive, Negative, or Neutral) 
+    using a machine learning model.
+    """)
 
-st.markdown("---")
-st.caption("Powered by a custom sentiment analysis model.")
+if model is None:
+    st.warning("The sentiment analysis model could not be loaded. Please ensure 'train_model.py' has been run successfully to create 'sentiment_pipeline.pkl' and that it's located in the 'models/' directory (one level up from this app.py script).")
+else:
+    st.subheader("Enter Your Product Review:")
+    user_input = st.text_area(
+        "Type or paste your review here:", 
+        height=180, 
+        placeholder="E.g., This product is amazing, highly recommend it!",
+        help="The model will analyze the sentiment of the text you enter."
+    )
+
+    if st.button("Analyze Sentiment", help="Click to get the sentiment prediction"):
+        if user_input:
+            with st.spinner("Analyzing sentiment..."):
+                processed_input = preprocess_text(user_input)
+                
+                if processed_input: # Ensure preprocessing didn't result in an empty string
+                    prediction = model.predict([processed_input]) # model.predict expects a list-like input
+                    sentiment = prediction[0]
+
+                    st.markdown("---")
+                    st.subheader("Prediction Result:")
+
+                    if sentiment == 'positive':
+                        st.success(f"## 😊 Positive")
+                    elif sentiment == 'negative':
+                        st.error(f"## 😠 Negative")
+                    else: # neutral
+                        st.info(f"## 😐 Neutral")
+
+                    st.markdown("---")
+                    st.subheader("Details:")
+                    st.write(f"**Original Review:**")
+                    st.code(user_input, language='text')
+                    st.write(f"**Cleaned Review (as processed by model):**")
+                    st.code(processed_input, language='text')
+
+                else:
+                    st.warning("The input review became empty after preprocessing. Please try a different review.")
+        else:
+            st.warning("Please enter some text in the review box to analyze its sentiment.")
+
+st.write("---")
+st.caption("Model developed with TF-IDF, SMOTE, and Multinomial Naive Bayes.")
