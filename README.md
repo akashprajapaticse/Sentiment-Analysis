@@ -37,9 +37,9 @@ Sentiment-Analysis/
 ├── frontend/
 │   └── streamlit_app.py        # Streamlit web app
 ├── models/
-│   └── sentiment\_pipeline.pkl  # Trained ML model
+│   └── sentiment_pipeline.pkl  # Trained ML model
 ├── scripts/
-│   └── train\_model.py          # Model training script
+│   └── train_model.py          # Model training script
 ├── requirements.txt            # Required Python packages
 └── README.md                   # Project documentation
 
